@@ -1,0 +1,67 @@
+datasource db {
+    provider = "sqlite"
+    url      = "file:./dev.db"
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+model Employee {
+    id                              Int                    @id @default(autoincrement())
+    name                            String
+    email                           String                 @unique
+    employeeLevel                   EmployeeLevel?
+    managementAssignmentsAsManager  ManagementAssignment[] @relation("manager")
+    managementAssignmentsAsEmployee ManagementAssignment[] @relation("employee")
+    expenseHistory                  ExpenseHistory[]       @relation("submitter")
+    expenseHistoryAsApprover        ExpenseHistory[]       @relation("approver")
+    expensesSubmitted               Expense[]              @relation("submitter")
+}
+
+model EmployeeLevel {
+    id         Int              @id @default(autoincrement())
+    level      ManagementLevel? @relation(fields: [levelId], references: [id])
+    levelId    Int?             @unique
+    employee   Employee?        @relation(fields: [employeeId], references: [id])
+    employeeId Int?             @unique
+}
+
+model ManagementLevel {
+    id              Int            @id @default(autoincrement())
+    level           Int
+    name            String
+    managementLevel EmployeeLevel?
+}
+
+model ManagementAssignment {
+    id         Int       @id @default(autoincrement())
+    employee   Employee? @relation("employee", fields: [employeeId], references: [id])
+    employeeId Int?
+    manager    Employee? @relation("manager", fields: [managerId], references: [id])
+    managerId  Int?
+}
+
+model Expense {
+    id          Int              @id @default(autoincrement())
+    name        String
+    amount      Float
+    status      Int              @default(0)
+    note        String?
+    history     ExpenseHistory[]
+    submitter   Employee       @relation("submitter", fields: [submitterId], references: [id])
+    submitterId Int
+}
+
+model ExpenseHistory {
+    id              Int       @id @default(autoincrement())
+    date            DateTime  @default(now())
+    status          Int
+    expense         Expense   @relation(fields: [expenseId], references: [id])
+    expenseId       Int
+    submitter       Employee  @relation("submitter", fields: [submitterId], references: [id])
+    submitterId     Int
+    approver        Employee? @relation("approver", fields: [approverId], references: [id])
+    approverId      Int?
+    temporaryStatus Int?      @default(0)
+}
